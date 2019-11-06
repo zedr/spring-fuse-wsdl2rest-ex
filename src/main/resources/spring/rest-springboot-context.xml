@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+    xmlns:cxf="http://camel.apache.org/schema/cxf"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="         http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd         http://camel.apache.org/schema/cxf http://camel.apache.org/schema/cxf/camel-cxf.xsd         http://camel.apache.org/schema/spring http://camel.apache.org/schema/spring/camel-spring.xsd">
+    <bean id="ar" class="org.apache.account.AccountIdProcessor"/>
+    <camelContext id="cxfrs" xmlns="http://camel.apache.org/schema/spring">
+        <dataFormats>
+            <xmljson id="xmljson"/>
+        </dataFormats>
+        
+        <restConfiguration bindingMode="json" component="servlet"
+            host="localhost" port="8081"/>
+        <rest id="rest-73d24d91-6fb1-4a61-84be-1f940973c092" path="/jaxrs">
+            <get id="get-68211151-0533-4e3a-956b-3e0dfb6e0dbd"
+                outType="org.apache.account.AccountRespone"
+                type="org.apache.account.AccountRequest" uri="/account/{id}">
+                <to uri="direct:findAccount"/>
+            </get>
+            <!--<get id="get-4d9bfc24-f2ad-4979-a1c3-e2296f56654f"
+                outType="java.lang.String" type="java.lang.String" uri="/ping/{arg0}">
+                <to uri="direct:ping"/>
+            </get>-->
+        </rest>
+        <route id="findAccount">
+            <from id="_from1" uri="direct:findAccount"/>
+            <log id="_log1" loggingLevel="INFO" message="findAccount"/>
+            <process ref="ar" />
+            <to id="_to1" uri="cxf://http://localhost:8080/servizi/AccountPort?defaultOperationName=findAccount&amp;serviceClass=org.apache.account.AccountServiceImpl"/>
+            <log id="sasa" loggingLevel="WARN" message="${body}"/>
+            <setHeader headerName="Content-Type" id="_setHeader1">
+                <constant>application/json</constant>
+            </setHeader>
+            <setBody id="_setBody1">
+                <simple>${body[0]}</simple>
+            </setBody>
+        </route>
+        <route id="ping">
+            <from id="_from2" uri="direct:ping"/>
+            <log id="_log2" loggingLevel="INFO" message="ping"/>
+            <setBody id="_setBody2">
+                <simple>${header.arg0}</simple>
+            </setBody>
+            <unmarshal id="_unmarshal1">
+                <json library="Jackson" unmarshalTypeName="java.lang.String"/>
+            </unmarshal>
+            <to id="_to2" uri="cxf://http://localhost:8080/servizi/AccountPort?serviceClass=org.apache.account.AccountServiceImpl&amp;defaultOperationName=ping"/>
+            <setHeader headerName="Content-Type" id="_setHeader2">
+                <constant>application/json</constant>
+            </setHeader>
+            <setBody id="_setBody3">
+                <simple>${body[0]}</simple>
+            </setBody>
+        </route>
+    </camelContext>
+</beans>
